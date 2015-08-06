@@ -199,6 +199,12 @@ private:
       return MergeShortFunctions ? tryMergeSimpleBlock(I, E, Limit) : 0;
     }
     if (TheLine->Last->is(tok::l_brace)) {
+      if (Style.AllowShortNamespacesOnASingleLine &&
+         TheLine->First->is(tok::kw_namespace)) {
+	if (unsigned result = tryMergeNamespace(I, E, Limit)) {
+          return result;
+	}
+      }
       return Style.BreakBeforeBraces == FormatStyle::BS_Attach
                  ? tryMergeSimpleBlock(I, E, Limit)
                  : 0;
@@ -256,6 +262,31 @@ private:
     if (1 + I[1]->Last->TotalLength > Limit)
       return 0;
     return 1;
+  }
+
+  unsigned tryMergeNamespace(
+      SmallVectorImpl<AnnotatedLine *>::const_iterator I,
+      SmallVectorImpl<AnnotatedLine *>::const_iterator E, unsigned Limit) {
+    if (Limit == 0)
+      return 0;
+    if (I[1]->InPPDirective != (*I)->InPPDirective ||
+        (I[1]->InPPDirective && I[1]->First->HasUnescapedNewline))
+      return 0;
+
+    Limit = limitConsideringMacros(I + 1, E, Limit);
+
+    if (1 + I[1]->Last->TotalLength > Limit)
+      return 0;
+
+    // What is in the namespace should end with semicolon
+    if (I[1]->Last->isNot(tok::semi))
+      return 0;
+
+    // Last, check that the third line starts with a closing brace.
+    if (I[2]->First->isNot(tok::r_brace))
+      return 0;
+
+    return 2;
   }
 
   unsigned tryMergeSimpleControlStatement(
