@@ -1551,6 +1551,7 @@ void TokenAnnotator::calculateFormattingInformation(AnnotatedLine &Line) {
     return;
   FormatToken *Current = Line.First->Next;
   bool InFunctionDecl = Line.MightBeFunctionDecl;
+  bool SawCtorInitList = false;
   while (Current) {
     if (isFunctionDeclarationName(*Current))
       Current->Type = TT_FunctionDeclarationName;
@@ -1585,6 +1586,8 @@ void TokenAnnotator::calculateFormattingInformation(AnnotatedLine &Line) {
                spaceRequiredBefore(Line, *Current)) {
       Current->SpacesRequiredBefore = 1;
     }
+    if (Current->isOneOf(TT_CtorInitializerComma, TT_CtorInitializerColon))
+      SawCtorInitList = true;
 
     Current->MustBreakBefore =
         Current->MustBreakBefore || mustBreakBefore(Line, *Current);
@@ -1597,6 +1600,11 @@ void TokenAnnotator::calculateFormattingInformation(AnnotatedLine &Line) {
         !Line.Last->isOneOf(tok::semi, tok::comment)) // Only for definitions.
       // FIXME: Line.Last points to other characters than tok::semi
       // and tok::lbrace.
+      Current->MustBreakBefore = true;
+
+    if (Style.BreakBeforeBraceAfterConstructorInitializerLists &&
+        SawCtorInitList &&
+        Current->is(TT_FunctionLBrace))
       Current->MustBreakBefore = true;
 
     Current->CanBreakBefore =

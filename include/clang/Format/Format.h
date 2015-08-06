@@ -163,6 +163,16 @@ struct FormatStyle {
   /// \brief The way to wrap binary operators.
   BinaryOperatorStyle BreakBeforeBinaryOperators;
 
+  /// \brief If \c true, always break before braces after ctor initializer lists
+  ///
+  /// Currently, only has an effect if brace-style BS_Attach is enabled.
+  /// (Since other brace styles would always break here anyways.)
+  ///
+  /// This option essentially disables a different option
+  /// "ConstructorInitializerAllOnOneLineOrOnePerLine". It would be nice to make
+  /// it not force a break when bin packing would have applied. (TODO)
+  bool BreakBeforeBraceAfterConstructorInitializerLists;
+
   /// \brief Different ways to attach braces to their surrounding context.
   enum BraceBreakingStyle {
     /// Always attach braces to surrounding context.
