@@ -199,6 +199,11 @@ private:
       return MergeShortFunctions ? tryMergeSimpleBlock(I, E, Limit) : 0;
     }
     if (TheLine->Last->is(tok::l_brace)) {
+      if (Style.AllowShortNamespacesOnASingleLine &&
+          TheLine->First->is(tok::kw_namespace)) {
+        if (unsigned result = tryMergeNamespace(I, E, Limit))
+          return result;
+      }
       return Style.BreakBeforeBraces == FormatStyle::BS_Attach
                  ? tryMergeSimpleBlock(I, E, Limit)
                  : 0;
@@ -256,6 +261,65 @@ private:
     if (1 + I[1]->Last->TotalLength > Limit)
       return 0;
     return 1;
+  }
+
+  unsigned tryMergeNamespace(SmallVectorImpl<AnnotatedLine *>::const_iterator I,
+                             SmallVectorImpl<AnnotatedLine *>::const_iterator E,
+                             unsigned Limit) {
+    if (Limit == 0)
+      return 0;
+    if (I[1]->InPPDirective != (*I)->InPPDirective ||
+        (I[1]->InPPDirective && I[1]->First->HasUnescapedNewline))
+      return 0;
+
+    Limit = limitConsideringMacros(I + 1, E, Limit);
+
+    if (1 + I[1]->Last->TotalLength > Limit)
+      return 0;
+
+    // An assumption of the function is that the first line begins with
+    // keyword namespace (i.e. I[0]->First->is(tok::kw_namespace))
+    // Check also that the second token after 'namespace' exists and is an
+    // l_brace which we aren't requried to break before
+    if (!I[0]->First->Next || !I[0]->First->Next->Next)
+      return 0;
+    FormatToken *Tok = I[0]->First->Next->Next;
+    if (!Tok->is(tok::l_brace) || Tok->MustBreakBefore)
+      return 0;
+
+    // Check if it's a namespace inside a namespace, and call recursively if so
+    // 10 + 2 + 2 is the sizes of the strings "namespace " " {" and " }"
+    if (I[1]->First->is(tok::kw_namespace)) {
+      unsigned inner_limit =
+          Limit - 10 - 2 - 2 -
+          (I[0]->First->Next ? I[0]->First->Next->TotalLength : 0);
+      unsigned inner_result = tryMergeNamespace(I + 1, E, inner_limit);
+      if (!inner_result)
+        return 0;
+      // check if there is even a line after the inner result
+      if (I + 2 + inner_result >= E)
+        return 0;
+      // check that the line after the inner result starts with a closing brace
+      // which we are permitted to merge into one line
+      if (I[2 + inner_result]->First->is(tok::r_brace) &&
+          !I[2 + inner_result]->First->MustBreakBefore)
+        return 2 + inner_result;
+      return 0;
+    }
+
+    // There's no inner namespace, so we are considering to merge at most one
+    // line.
+
+    // The line which is in the namespace should end with semicolon
+    if (I[1]->Last->isNot(tok::semi))
+      return 0;
+
+    // Last, check that the third line starts with a closing brace.
+    if (I[2]->First->isNot(tok::r_brace) || I[2]->First->MustBreakBefore)
+      return 0;
+
+    // If so, merge all three lines.
+    return 2;
   }
 
   unsigned tryMergeSimpleControlStatement(

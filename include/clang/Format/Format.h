@@ -112,6 +112,13 @@ struct FormatStyle {
   /// single line.
   bool AllowShortLoopsOnASingleLine;
 
+  /// \brief If \c true,
+  /// \code
+  /// namespace a { class b; }
+  /// \endcode
+  /// can be put on a single line
+  bool AllowShortNamespacesOnASingleLine;
+
   /// \brief Different ways to break after the function definition return type.
   enum DefinitionReturnTypeBreakingStyle {
     /// Break after return type automatically.

@@ -3226,16 +3226,19 @@ TEST_F(FormatTest, FormatBeginBlockEndMacros) {
   Style.MacroBlockEnd = "^[A-Z_]+_END$";
   verifyFormat("FOO_BEGIN\n"
                "  FOO_ENTRY\n"
-               "FOO_END", Style);
+               "FOO_END",
+               Style);
   verifyFormat("FOO_BEGIN\n"
                "  NESTED_FOO_BEGIN\n"
                "    NESTED_FOO_ENTRY\n"
                "  NESTED_FOO_END\n"
-               "FOO_END", Style);
+               "FOO_END",
+               Style);
   verifyFormat("FOO_BEGIN(Foo, Bar)\n"
                "  int x;\n"
                "  x = 1;\n"
-               "FOO_END(Baz)", Style);
+               "FOO_END(Baz)",
+               Style);
 }
 
 //===----------------------------------------------------------------------===//
@@ -7649,14 +7652,13 @@ TEST_F(FormatTest, BreaksStringLiterals) {
 
   // Verify that splitting the strings understands
   // Style::AlwaysBreakBeforeMultilineStrings.
-  EXPECT_EQ(
-      "aaaaaaaaaaaa(\n"
-      "    \"aaaaaaaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaa \"\n"
-      "    \"aaaaaaaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaa\");",
-      format("aaaaaaaaaaaa(\"aaaaaaaaaaaaaaaaaaaaaaaaaa "
-             "aaaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaaaaaa "
-             "aaaaaaaaaaaaaaaaaaaaaa\");",
-             getGoogleStyle()));
+  EXPECT_EQ("aaaaaaaaaaaa(\n"
+            "    \"aaaaaaaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaa \"\n"
+            "    \"aaaaaaaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaa\");",
+            format("aaaaaaaaaaaa(\"aaaaaaaaaaaaaaaaaaaaaaaaaa "
+                   "aaaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaaaaaa "
+                   "aaaaaaaaaaaaaaaaaaaaaa\");",
+                   getGoogleStyle()));
   EXPECT_EQ("return \"aaaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaaaaaa \"\n"
             "       \"aaaaaaaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaa\";",
             format("return \"aaaaaaaaaaaaaaaaaaaaaa "
@@ -10431,6 +10433,45 @@ TEST_F(FormatTest, DisableRegions) {
 TEST_F(FormatTest, DoNotCrashOnInvalidInput) {
   format("? ) =");
   verifyNoCrash("#define a\\\n /**/}");
+}
+
+TEST_F(FormatTest, ShortNamespacesOption) {
+  FormatStyle style = getLLVMStyle();
+  style.AllowShortNamespacesOnASingleLine = true;
+
+  verifyFormat("namespace foo { class bar; }", style);
+  verifyFormat("namespace foo {\n"
+               "class bar;\n"
+               "class baz;\n"
+               "}",
+               style);
+  verifyFormat("namespace foo { namespace bar { class baz; } }", style);
+  verifyFormat("namespace foo {\n"
+               "namespace bar { class baz; }\n"
+               "namespace quar { class quaz; }\n"
+               "}",
+               style);
+  verifyFormat("namespace foo {\n"
+               "int f() { return 5; }\n"
+               "}",
+               style);
+  verifyFormat("namespace foo { template <T> struct bar; }", style);
+  verifyFormat("namespace foo { constexpr int num = 42; }", style);
+
+  // test column limit
+  verifyFormat("namespace boost {\n"
+               "namespace spirit {\n"
+               "namespace qi {\n"
+               "namespace unicode { namespace foo { class bar; } }\n"
+               "}\n"
+               "}\n"
+               "}",
+               style);
+
+  style.ColumnLimit = 0;
+  verifyFormat("namespace boost { namespace spirit { namespace qi { namespace "
+               "unicode { namespace foo { class bar; } } } } }",
+               style);
 }
 
 } // end namespace
