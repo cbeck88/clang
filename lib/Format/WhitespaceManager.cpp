@@ -417,10 +417,14 @@ void WhitespaceManager::appendIndentText(std::string &Text,
     Text.append(Spaces, ' ');
     break;
   case FormatStyle::UT_Always: {
-    unsigned FirstTabWidth =
+    const unsigned FirstTabWidth =
         Style.TabWidth - WhitespaceStartColumn % Style.TabWidth;
     // Indent with tabs only when there's at least one full tab.
-    if (FirstTabWidth + Style.TabWidth <= Spaces) {
+    if (FirstTabWidth + Style.TabWidth > Spaces) {
+      Text.append(Spaces, ' ');
+      break;
+    }
+    if (Spaces >= FirstTabWidth) {
       Spaces -= FirstTabWidth;
       Text.append("\t");
     }

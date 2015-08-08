@@ -10437,14 +10437,14 @@ TEST_F(FormatTest, TestLuaTabbedCommentAlignment) {
 	const char test[] =
 "if (it != bytecode_cache_.end()) {\n"
 "\tlua_pushstring(L, bytecode_cache_key);     // key\n"
-"\tlua_rawget(L, LUA_REGISTRYINDEX);\t  // cache_table\n"
+"\tlua_rawget(L, LUA_REGISTRYINDEX);\t   // cache_table\n"
 "\tlua_rawgeti(L, -1, it->second);\t\t   // cache_table bytecode\n"
 "\tlua_remove(L, -2);\t\t\t   // bytecode\n"
 "\tlua_insert(L, -1 - nargs);\t\t   // bytecode [args x nargs]\n"
 "\treturn protected_call(nargs);\t\t   //\n"
 "} else if (load_string(script)) {\t\t   // bytecode\n"
 "\tlua_pushstring(L, bytecode_cache_key);     // bytecode key\n"
-"\tlua_rawget(L, LUA_REGISTRYINDEX);\t  // bytecode cache_table\n"
+"\tlua_rawget(L, LUA_REGISTRYINDEX);\t   // bytecode cache_table\n"
 "\tlua_pushvalue(L, -2);\t\t\t   // bytecode cache_table bytecode\n"
 "\tbytecode_cache_[script] = luaL_ref(L, -2); // bytecode cache_table\n"
 "\tlua_pop(L, 1);\t\t\t\t   // bytecode\n"
@@ -10459,7 +10459,7 @@ TEST_F(FormatTest, TestLuaTabbedCommentAlignment) {
 	style.IndentWidth = 8u;
 	style.UseTab = FormatStyle::UT_Always;
 	style.AlignTrailingComments = true;
-	style.ColumnLimit = 120u;
+	style.ColumnLimit = 130u;
 
 	verifyFormat(test, style);	
 }
