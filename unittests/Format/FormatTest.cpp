@@ -10433,6 +10433,59 @@ TEST_F(FormatTest, DoNotCrashOnInvalidInput) {
   verifyNoCrash("#define a\\\n /**/}");
 }
 
+TEST_F(FormatTest, TestLuaTabbedCommentAlignment) {
+  const char test[] =
+"if (it != bytecode_cache_.end()) {\n"
+"\tlua_pushstring(L, bytecode_cache_key);     // key\n"
+"\tlua_rawget(L, LUA_REGISTRYINDEX);\t  // cache_table\n"
+"\tlua_rawgeti(L, -1, it->second);\t\t   // cache_table bytecode\n"
+"\tlua_remove(L, -2);\t\t\t   // bytecode\n"
+"\tlua_insert(L, -1 - nargs);\t\t   // bytecode [args x nargs]\n"
+"\treturn protected_call(nargs);\t\t   //\n"
+"} else if (load_string(script)) {\t\t   // bytecode\n"
+"\tlua_pushstring(L, bytecode_cache_key);     // bytecode key\n"
+"\tlua_rawget(L, LUA_REGISTRYINDEX);\t  // bytecode cache_table\n"
+"\tlua_pushvalue(L, -2);\t\t\t   // bytecode cache_table bytecode\n"
+"\tbytecode_cache_[script] = luaL_ref(L, -2); // bytecode cache_table\n"
+"\tlua_pop(L, 1);\t\t\t\t   // bytecode\n"
+"\tlua_insert(L, -1 - nargs);\t\t   // bytecode [args x nargs]\n"
+"\treturn protected_call(nargs);\t\t   //\n"
+"} else {\n"
+"\treturn false;\n"
+"}";
+
+  FormatStyle style = getMozillaStyle();
+  style.BreakBeforeBraces = FormatStyle::BS_Attach;
+  style.IndentWidth = 8u;
+  style.UseTab = FormatStyle::UT_Always;
+  style.AlignTrailingComments = true;
+  style.ColumnLimit = 120u;
+
+  verifyFormat(test, style);
+
+  const char test2[] =
+"if (it != bytecode_cache_.end()) {\n"
+"\tlua_pushstring(L, bytecode_cache_key);     // key\n"
+"\tlua_rawget(L, LUA_REGISTRYINDEX);          // cache_table\n"
+"\tlua_rawgeti(L, -1, it->second);            // cache_table bytecode\n"
+"\tlua_remove(L, -2);                         // bytecode\n"
+"\tlua_insert(L, -1 - nargs);                 // bytecode [args x nargs]\n"
+"\treturn protected_call(nargs);              //\n"
+"} else if (load_string(script)) {                  // bytecode\n"
+"\tlua_pushstring(L, bytecode_cache_key);     // bytecode key\n"
+"\tlua_rawget(L, LUA_REGISTRYINDEX);          // bytecode cache_table\n"
+"\tlua_pushvalue(L, -2);                      // bytecode cache_table bytecode\n"
+"\tbytecode_cache_[script] = luaL_ref(L, -2); // bytecode cache_table\n"
+"\tlua_pop(L, 1);                             // bytecode\n"
+"\tlua_insert(L, -1 - nargs);                 // bytecode [args x nargs]\n"
+"\treturn protected_call(nargs);              //\n} else {\n"
+"\treturn false;\n"
+"};";
+
+  style.UseTab = FormatStyle::UT_ForIndentation;
+  verifyFormat(test2, style);
+}
+
 } // end namespace
 } // end namespace format
 } // end namespace clang
